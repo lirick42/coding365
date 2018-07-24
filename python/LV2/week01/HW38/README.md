@@ -1,4 +1,4 @@
-# coding365 課後作業： (Python_LV２_wk01_hw05)
+# coding365 課後作業： (Python_LV2_wk01_hw05)
 
 同學要選老師做專題 (project)， 
 N 位學生 (N student)，M 位老師 (M teacher) ， 
