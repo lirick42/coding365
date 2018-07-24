@@ -1,164 +1,124 @@
-from itertools import dropwhile
-from functools import reduce
+#將字串(str) 反轉後放入到 List(int)
+def cS2L(List):
+    temp = []
+    for i in range(len(List)):
+        temp.append(List[i])
+    temp.reverse()
+    temp = list(map(int, temp))
+    return temp
 
-class BigInt:
-    def __init__(self, val):
-        self.value = BigInt.parse(val) if isinstance(val, str) else val
-        
-    def __str__(self):
-        v = BigInt.toComplement(self.value) \
-                if BigInt.isNegative(self.value) else self.value
-        builder = ['%04d' % v[i] for i in range(len(v) - 1, -1, -1)]
-        clist = list(dropwhile(lambda c: c == '0', list(''.join(builder))))
-        return '0' if len(clist) == 0 else ''.join(
-              ((['-'] + clist) if BigInt.isNegative(self.value) else clist))
-        
-    def __add__(self, that):
-        return (self - BigInt(BigInt.toComplement(that.value))) \
-                if BigInt.isNegative(that.value) else self.add(that)
-            
-    def add(self, that):            
-        length = max(len(self.value), len(that.value))
-        op1 = BigInt.copyOf(self.value, length)
-        op2 = BigInt.copyOf(that.value, length)
-        sum = BigInt.addForEach(op1, op2, 0)
-        return BigInt(
-            (((sum[0:-1] + [1]) if BigInt.isPositive(op1) else []) + [0] * 8)
-                if sum[-1] == 1 
-                else (sum[0:-1] + [0 if BigInt.isPositive(op1) else 9999])
-        )
-        
-    def __sub__(self, that):
-        return (self + BigInt(BigInt.toComplement(that.value))) \
-            if BigInt.isNegative(that.value) else self.sub(that)
-        
-    def sub(self, that):
-        length = max(len(self.value), len(that.value))
-        op1 = BigInt.copyOf(self.value, length)
-        op2 = BigInt.copyOf(that.value, length)        
-        remain = BigInt.subForEach(op1, op2, 0)
-        return BigInt(
-            ((remain[0:-1] + [9998] if BigInt.isNegative(op1) else []) 
-                + [9999] * 8) if remain[-1] == 1 
-                    else (remain[0:-1] + 
-                        [9999 if BigInt.isNegative(op1) else 0])
-        )
-    
-    def multiply(self, val, shift):
-        product = [0] * shift + \
-            BigInt.multiplyForEach(self.value, val, 0)
-        return BigInt((product[0:-1] + product[-1:] + [0] * 8) \
-            if product[-1] != 0 else (product[0:-1] + [0]))
+#將輸入之兩數字補 0 至相同長度
+def pZero(numA, numB):
+    for i in range((abs(len(numA) - len(numB)))):
+        if (len(numA) < len(numB)):
+            numA.append(0)
+        else:
+            numB.append(0)
+    return numA, numB
 
-    def __mul__(self, that):
-        op1 = BigInt(BigInt.toComplement(self.value)) \
-                if BigInt.isNegative(self.value) else self
-        op2 = BigInt.toComplement(that.value) \
-                if BigInt.isNegative(that.value) else that.value
-        result = reduce(BigInt.__add__, 
-                [op1.multiply(op2[i], i) 
-                    for i in range(len(op2) - 1)], BigInt('0'))
-        return BigInt(BigInt.toComplement(result.value)) \
-                if self.value[-1] + that.value[-1] == 9999 else result
+#加法
+def add(add, added):
+    carry = 0
+    ans = []
+    for i in range(len(add)):
+        digit = add[i] + added[i] + carry
+        if digit >= 10:
+            digit = digit - 10
+            carry = 1
+        else:
+            carry = 0
+        ans.append(digit)
 
-    def __ge__(self, that):
-        return False if BigInt.isNegative((self - that).value) else True
+    if (carry == 1):
+        ans.append(1)
+    ans.reverse()
+    return ans
 
-    def isLessOrEqualsQuotient(self, op1, op2):
-        return True if op1 >= (self * op2) else False
-    
-    def __floordiv__(self, that):
-        op1 = BigInt(BigInt.toComplement(self.value)) \
-                if BigInt.isNegative(self.value) else self
-        op2 = BigInt(BigInt.toComplement(that.value)) \
-                if BigInt.isNegative(that.value) else that
-        one = BigInt('1')
-        
-        def quotient(left, right):
-            if right >= left:
-                x = (left + right).divide(2)
-                l, r = ((x + one, right) 
-                    if x.isLessOrEqualsQuotient(op1, op2) 
-                    else (left, x - one))
-                return quotient(l, r)
+#減法
+def sub(sub, subed):
+    borrow = 0
+    ans = []
+    for i in range(len(sub)):
+        digit = sub[i] - subed[i] + borrow
+        if digit < 0:
+            digit = digit + 10
+            borrow = -1
+        else:
+            borrow = 0
+        ans.append(digit)
+    ans = delZero(ans)
+    return ans
+
+
+#將多餘的 0 刪除
+def delZero(list):
+    list.reverse()
+    for i in range(len(list)):
+        if list[0] == 0 and len(list) != 1:
+            del (list[0])
+        else:
+            break
+    return list
+
+
+#印出答案
+def printans(list):
+    for i in list:
+        print(i, end='')
+    print("")
+
+
+#例外處理：超過 10 位元
+def overC(calculation):
+    for i in range(len(calculation)):
+        if (calculation[i] >= 10):
+            calculation[i + 1] = calculation[i + 1] + calculation[i] // 10
+            calculation[i] = calculation[i] % 10
+    return calculation
+
+
+#乘法
+def adjAns(calculation):
+    calculation = overC(calculation)
+    calculation = delZero(calculation)
+    return calculation
+
+def multiply(multiplier, multiplicand):
+    calculation = []
+    for i in range(120):
+        calculation.append(0)
+    for i in range(len(multiplier)):
+        for j in range(len(multiplicand)):
+            num1 = multiplicand[i] * multiplier[j]
+            if (calculation[i + j] == 0):
+                calculation[i + j] = num1
             else:
-                return left - one
-        result = quotient(BigInt('0'), op1)
-        return BigInt(BigInt.toComplement(result.value)) \
-                if self.value[-1] + that.value[-1] == 9999 else result
-    
-    @staticmethod
-    def divideForEach(op, val, remain):
-        if op == []:
-            return []
-        else:
-            tmp = op[-1] + remain
-            nextRemain = (tmp % val) * 10000
-            return [tmp // val] + \
-                BigInt.divideForEach(op[0:-1], val, nextRemain)
-    
-    def divide(self, that):
-        result = BigInt.divideForEach(self.value, that, 0)
-        return BigInt(result[::-1] + [0] * (8 - (len(result) % 8)))
-        
-    @staticmethod
-    def parse(val):
-        v = val[1:] if val[0] == '-' else val
-        digits = [int(v[i if i >= 0 else 0 : i + 4]) 
-                for i in range(len(v) - 4, -4, -4)]
-        zeros = [0] * ((len(digits) // 8 + 1) * 8 - len(digits))
-        return BigInt.toComplement(digits + zeros) \
-                if val[0] == '-' else (digits + zeros)
+                calculation[i + j] = calculation[i + j] + num1
+    calculation = adjAns(calculation)
+    return calculation
 
-    @staticmethod
-    def addForEach(op1, op2, carry):
-        if op1 == []:
-            return [carry]
-        else:
-            s = op1[0] + op2[0] + carry
-            nextCarry, c = (0, s) if s < 10000 else (1, s - 10000)
-            return [c] + BigInt.addForEach(op1[1:], op2[1:], nextCarry)
 
-    @staticmethod
-    def subForEach(op1, op2, borrow):
-        if op1 == []:
-            return [borrow]
-        else:
-            r = op1[0] - op2[0] - borrow
-            nextBorrow, c = (0, r) if r > -1 else (1, r + 10000)
-            return [c] + BigInt.subForEach(op1[1:], op2[1:], nextBorrow)
+# 若輸入超過 60 位數，則回傳 ERROR
+def isCorrectInputNumber(num1, num2):
+    if len(num1) > 60 or len(num2) > 60:
+        print("input Error")
+        return False
+    else:
+        return True
 
-    @staticmethod
-    def multiplyForEach(op, val, carry):
-        if op == []:
-            return [carry]
-        else:
-            tmp = op[0] * val + carry
-            nextCarry = tmp // 10000
-            return [tmp % 10000] + \
-                    BigInt.multiplyForEach(op[1:], val, nextCarry)
-            
-    @staticmethod
-    def toComplement(v):
-        c = [9999 - i for i in v]
-        return [c[0] + 1] + c[1:]
-    
-    @staticmethod
-    def copyOf(original, newLength):
-        return original + [0 if BigInt.isPositive(original) else 9999 
-                for i in range(len(original), newLength)]
-    
-    @staticmethod
-    def isNegative(list):
-        return list[-1] == 9999
-        
-    @staticmethod
-    def isPositive(list):
-        return list[-1] == 0
 
-a = input(BigInt())
-b = input(BigInt())
-print(a + b)
-print(a - b)
-print(a * b)
-#print(a // b)
+num1 = ""
+num2 = ""
+
+while True:
+    num1 = input()
+    num2 = input()
+    if (isCorrectInputNumber(num1, num2)):
+        break
+
+num1 = cS2L(num1)
+num2 = cS2L(num2)
+num1, num2 = pZero(num1, num2)
+printans(add(num1, num2))
+printans(sub(num1, num2))
+printans(multiply(num1, num2))
